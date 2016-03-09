@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <device>
+    <deviceType>urn:demo-micasaverde-com:device:weather:1</deviceType>
+    <friendlyName>Weather Station</friendlyName>
+    <manufacturer>logread (aka LV999)</manufacturer>
+    <manufacturerURL></manufacturerURL>
+    <modelDescription>Weather Station for openLuup</modelDescription>
+    <modelName>beta</modelName>
+    <modelNumber>1</modelNumber>
+    <handleChildren>1</handleChildren>
+    <UDN></UDN>
+    <serviceList>
+    </serviceList>
+		<staticJson>D_openWeather.json</staticJson>
+    <implementationList>
+      <implementationFile>I_openWeather.xml</implementationFile>
+    </implementationList>
+  </device>
+</root>
