@@ -1,15 +1,15 @@
 _NAME = "openWeather"
-_VERSION = "2016.03.09"
+_VERSION = "2016.03.10"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
 --[[
 
-		Version 0.8
-		changelog: beta for initial public release
+		Version 0.10 (beta 2)
+		changelog: addressed the startup and child devices issues identified by akbooer
 
-		Special thanks to amg0 for his support and advise
-		Acknowledgements to akbooer for developing the openLuup environement !
+		Special thanks to amg0 and akbooer for their support and advise
+		Acknowledgements to akbooer for developing the openLuup environement
 
 This plug-in is intended to run under the "openLuup" emulation of a Vera system
 It should work on a "real" Vera, but has not been tested in that environment.
@@ -128,34 +128,26 @@ function Weather_delay_callback() -- poll Weather Undergound for changes
 end
 
 function createchildren()
+	local children = luup.chdev.start(this_device)
+	luup.chdev.append(	this_device, children, "OWT", "oW Temperature", "urn:schemas-micasaverde-com:device:TemperatureSensor:1",
+						"D_TemperatureSensor1.xml", "", "", true)
+	luup.chdev.append(	this_device, children, "OWH", "oW Humidity", "urn:schemas-micasaverde-com:device:HumiditySensor:1",
+						"D_HumiditySensor1.xml", "", "", true)
+	luup.chdev.sync(this_device, children)
 	child_temperature = nil
 	child_humidity = nil
 	for devNo, dev in pairs (luup.devices) do -- check if both children exist
 		if dev.device_num_parent == this_device then
-			if dev.device_type == "urn:schemas-micasaverde-com:device:TemperatureSensor:1" then child_temperature = devNo
-			elseif dev.device_type == "urn:schemas-micasaverde-com:device:HumiditySensor:1" then child_humidity = devNo end
+			if dev.id == "OWT" then child_temperature = devNo
+			elseif dev.id == "OWH" then child_humidity = devNo end
 		end
     end
-	if child_temperature == nil then -- create temp child
-		child_temperature = luup.create_device(	"urn:schemas-micasaverde-com:device:TemperatureSensor:1",
-												"OWT", "oW Temperature", "D_TemperatureSensor1.xml",
-												"", "", "", false, false, this_device)
-	end
-	if child_humidity == nil then -- create humidity child
-		child_humidity = luup.create_device(	"urn:schemas-micasaverde-com:device:HumiditySensor:1",
-												"OWH", "oW Humidity", "D_HumiditySensor1.xml",
-												"", "", "", false, false, this_device)
-	end
 end
 
 function init(lul_device)
 	this_device = lul_device
-	if this_device ~= nil then -- quick & dirty solution to the fact that init gets called twice upon luup startup
-		if luup.attr_get("TemperatureFormat") == "F" then Str_Temperature = "temp_f" end -- localize for Farenheit
-		createchildren(this_device)
-		Weather_delay_callback()
-	end
+	if luup.attr_get("TemperatureFormat") == "F" then Str_Temperature = "temp_f" end -- localize for Farenheit
+	createchildren(this_device)
+	Weather_delay_callback()
 	return true, "OK", _NAME
 end
-
-init()
