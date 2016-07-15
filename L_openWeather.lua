@@ -1,12 +1,13 @@
 _NAME = "openWeather"
-_VERSION = "2016.03.10"
+_VERSION = "2016.07.15"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
 --[[
 
-		Version 0.10 (beta 2)
-		changelog: addressed the startup and child devices issues identified by akbooer
+		Version 1.0 (first production version)
+		changelog:	- code optimization (w/ recursive parsing of WU data table)
+					- installation via the AltUI/openLuup App Store
 
 		Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
@@ -41,6 +42,7 @@ WU["Metric"] = 1	-- 1 = metric units, 0 = US/Imperial, not yet used
 WU["ProviderName"] = "WUI (Weather Underground)" -- added for reference to data source
 WU["ProviderURL"] = "http://www.wunderground.com"
 
+local Str_Obs = "current_observation." -- the "root" key of the useful part of the data table from WU
 local Str_Temperature = "temp_c" 	-- the name of the raw variable name for the device temp
 									-- automatically changed in init() to "temp_f" for Farenheit based on user_data attribute
 local Str_Humidity = "relative_humidity"  -- the name of the raw variable name for the device humidity
@@ -69,36 +71,45 @@ local child_humidity
 -- functions
 
 function setvariables(key, value) -- extract the variables we want for our device from the WU data
-	if key == Str_Temperature then dvars["Temperature"][3] = value
-	elseif key == Str_Humidity then dvars["Humidity"][3] = string.gsub(value, "%%", "") -- !!! need to trim the "%" from the WU data
-	elseif key == Str_LastUpdate then dvars["LastUpdate"][3] = value
-	elseif key == Str_Condition then dvars["Condition"][3] = value
-	elseif key == Str_ConditionGroup then dvars["ConditionGroup"][3] = value
-	elseif key == Str_WindCondition then dvars["WindCondition"][3] = value
-	elseif key == Str_IconURL then dvars["IconUrl"][3] = value
-	-- can add more if required
+	if key == Str_Obs .. Str_Temperature then dvars["Temperature"][3] = value
+	elseif key == Str_Obs .. Str_Humidity then dvars["Humidity"][3] = string.gsub(value, "%%", "") -- !!! need to trim the "%" from the WU data
+	elseif key == Str_Obs .. Str_LastUpdate then dvars["LastUpdate"][3] = value
+	elseif key == Str_Obs .. Str_Condition then dvars["Condition"][3] = value
+	elseif key == Str_Obs .. Str_ConditionGroup then dvars["ConditionGroup"][3] = value
+	elseif key == Str_Obs .. Str_WindCondition then dvars["WindCondition"][3] = value
+	elseif key == Str_Obs .. Str_IconURL then dvars["IconUrl"][3] = value
+--	uncomment line below if all data from WU are desired as device variables (50+ !!!)
+--	else dvars[key] = {SID_Weather, key, value}
 	end
 end
 
-function WU_GetData() -- call the WU API with our key and location parameters and decode/parse the weather data
-	local url = "http://api.wunderground.com/api/" .. WU["ProviderKey"] .. "/conditions/q/" .. WU["Location"] .. ".json"
+function extractloop(datatable, keystring)
+	local tempstr
+	keystring = keystring or ""
+	for tkey, value in pairs(datatable) do
+		if keystring == "" then
+			tempstr = tkey
+		else
+			tempstr = keystring .. "." .. tkey
+		end
+		if type(value) == "table" then
+			extractloop(value, tempstr)
+		else
+			setvariables(tempstr, value)
+		end
+	end
+end
+
+function WU_GetData(category) -- call the WU API with our key and location parameters and decode/parse the weather data
+-- get current conditions
+	local url = "http://api.wunderground.com/api/" .. WU["ProviderKey"] .. "/" ..category .. "/q/" .. WU["Location"] .. ".json"
 	local wdata, retcode = http.request(url)
 	local err = (retcode ~=200)
 	if err then -- something wrong happpened (website down, wrong key or location)
 		wdata = nil -- to do: proper error handling
 	else
 		wdata, err = json.decode(wdata)
-		if not (err == 225) then 	-- iterate all the API data (50+ variables)...
-			for tkey, value in pairs(wdata["current_observation"]) do -- first level depth
-				if type(value) == "table" then
-					for ttkey, tvalue in pairs(wdata["current_observation"][tkey]) do -- second level depth
-						setvariables((tkey .. "_" .. ttkey), tvalue)
-					end
-				else
-					setvariables(tkey, value)
-				end
-			end
-		end
+		if not (err == 225) then extractloop(wdata) end
 	end
 	return err
 end
@@ -114,7 +125,7 @@ end
 
 function Weather_delay_callback() -- poll Weather Undergound for changes
 	check_param_updates()
-	local nodata = WU_GetData()
+	local nodata = WU_GetData("conditions")
 	for key, value in pairs(dvars) do
 		if luup.variable_get(value[1], value[2], this_device) ~= value[3] then -- only update if there is a change... better for watches
 			luup.variable_set(value[1], value[2], value[3], this_device)
