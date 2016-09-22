@@ -1,5 +1,5 @@
 _NAME = "openWeather"
-_VERSION = "1.1"
+_VERSION = "1.2"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
@@ -7,6 +7,8 @@ _AUTHOR = "logread (aka LV999)"
 
 Version 1.0 2016-07-15 - first production version, installation via the AltUI/openLuup App Store
 Version 1.1 2016-08-24 - major rewrite for cleaner and faster code, but no new functionality
+Version 1.2 2016-09-22 - added language parameter to fetch the WU data in another language than English (@korttoma suggestion)
+						 added today and tomorrow forecast data (high/low temps, conditions and text forecast
 
 		Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
@@ -36,14 +38,15 @@ local child_temperature
 local child_humidity
 
 local SID_Weather = "urn:upnp-micasaverde-com:serviceId:Weather1"
-local WU_urltemplate = "http://api.wunderground.com/api/%s/%s/q/%s.json"
+local WU_urltemplate = "http://api.wunderground.com/api/%s/%s/lang:%s/q/%s.json"
 
 
 local WU = {
 	ProviderKey = "Enter your WU API key there",
 	Location = "Enter your WU pws station or location here",
 	Period = 1800,	-- data refresh interval in seconds
-	Metric = 1,	-- 1 = metric units, 0 = US/Imperial, not yet used
+	Metric = 1,	-- 1 = metric units, 0 = US/Imperial
+	Language = "EN", -- default language
 	ProviderName = "WUI (Weather Underground)", -- added for reference to data source
 	ProviderURL = "http://www.wunderground.com"
 	}
@@ -56,7 +59,21 @@ local VariablesMap = {
 	current_observation_weather = {serviceId = SID_Weather, variable = "Condition"},
 	current_observation_wind_string = {serviceId = SID_Weather, variable = "WindCondition"},
 	current_observation_icon_url = {serviceId = SID_Weather, variable = "IconUrl"},
-	current_observation_icon = {serviceId = SID_Weather, variable = "ConditionGroup"}
+	current_observation_icon = {serviceId = SID_Weather, variable = "ConditionGroup"},
+	forecast_simpleforecast_forecastday_1_high_celsius = {serviceId = SID_Weather, variable = "TodayHighTemp"}, -- lua table indexes start at 1, not 0
+	forecast_simpleforecast_forecastday_1_high_fahrenheit = {serviceId = SID_Weather, variable = "TodayHighTemp"},
+	forecast_simpleforecast_forecastday_1_low_celsius = {serviceId = SID_Weather, variable = "TodayLowTemp"},
+	forecast_simpleforecast_forecastday_1_low_fahrenheit = {serviceId = SID_Weather, variable = "TodayLowTemp"},
+	forecast_simpleforecast_forecastday_1_conditions = {serviceId = SID_Weather, variable = "TodayConditions"},
+	forecast_txt_forecast_forecastday_1_fcttext = {serviceId = SID_Weather, variable = "TodayForecast"},
+	forecast_txt_forecast_forecastday_1_fcttext_metric = {serviceId = SID_Weather, variable = "TodayForecast"},
+	forecast_simpleforecast_forecastday_2_high_celsius = {serviceId = SID_Weather, variable = "TomorrowHighTemp"}, -- lua table indexes start at 1, not 0
+	forecast_simpleforecast_forecastday_2_high_fahrenheit = {serviceId = SID_Weather, variable = "TomorrowHighTemp"},
+	forecast_simpleforecast_forecastday_2_low_celsius = {serviceId = SID_Weather, variable = "TomorrowLowTemp"},
+	forecast_simpleforecast_forecastday_2_low_fahrenheit = {serviceId = SID_Weather, variable = "TomorrowLowTemp"},
+	forecast_simpleforecast_forecastday_2_conditions = {serviceId = SID_Weather, variable = "TomorrowConditions"},
+	forecast_txt_forecast_forecastday_2_fcttext = {serviceId = SID_Weather, variable = "TomorrowForecast"},
+	forecast_txt_forecast_forecastday_2_fcttext_metric = {serviceId = SID_Weather, variable = "TomorrowForecast"}
 	}
 
 -- functions
@@ -106,7 +123,8 @@ function extractloop(datatable, keystring)
 end
 
 function WU_GetData(category) -- call the WU API with our key and location parameters and decode/parse the weather data
-	local url = string.format(WU_urltemplate, WU.ProviderKey, category, WU.Location)
+	local url = string.format(WU_urltemplate, WU.ProviderKey, category, WU.Language, WU.Location)
+	nicelog({"calling WU with url = ", url})
 	local wdata, retcode = http.request(url)
 	local err = (retcode ~=200)
 	if err then -- something wrong happpened (website down, wrong key or location)
@@ -130,7 +148,8 @@ end
 
 function Weather_delay_callback() -- poll Weather Undergound for changes
 	check_param_updates()
-	WU_GetData("conditions") -- get current conditions (function WU_GetData is already designed to get other weather data in future versions)
+	WU_GetData("conditions") -- get current conditions
+	WU_GetData("forecast") -- get forecast conditions
 	luup.call_delay ("Weather_delay_callback", WU["Period"])
 end
 
@@ -156,8 +175,23 @@ function init(lul_device)
 	nicelog("device startup")
 	if luup.attr_get("TemperatureFormat") == "F" then -- localize for Farenheit or Celsius based on openLuup setup
 		VariablesMap.current_observation_temp_c = nil
+		VariablesMap.forecast_simpleforecast_forecastday_1_high_celsius = nil
+		VariablesMap.forecast_simpleforecast_forecastday_1_low_celsius = nil
+		VariablesMap.forecast_simpleforecast_forecastday_2_high_celsius = nil
+		VariablesMap.forecast_simpleforecast_forecastday_2_low_celsius = nil
 	else
 		VariablesMap.current_observation_temp_f = nil
+		VariablesMap.forecast_simpleforecast_forecastday_1_high_fahrenheit = nil
+		VariablesMap.forecast_simpleforecast_forecastday_1_low_fahrenheit = nil
+		VariablesMap.forecast_simpleforecast_forecastday_2_high_fahrenheit = nil
+		VariablesMap.forecast_simpleforecast_forecastday_2_low_fahrenheit = nil
+	end
+	if WU.Metric == 1 then -- localize for Metric or US/Imperial based on user defined device variable "Metric"
+		VariablesMap.forecast_txt_forecast_forecastday_1_fcttext = nil
+		VariablesMap.forecast_txt_forecast_forecastday_2_fcttext = nil
+	else
+		VariablesMap.forecast_txt_forecast_forecastday_1_fcttext_metric = nil
+		VariablesMap.forecast_txt_forecast_forecastday_2_fcttext_metric = nil
 	end
 	createchildren(this_device)
 	Weather_delay_callback()

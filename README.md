@@ -1,7 +1,7 @@
-openWeather plugin for openLuup
+﻿openWeather plugin for openLuup
 
-Version : 1.0
-Date : July 15, 2016
+Version : 1.2
+Date : Sept 22, 2016
 Author : logread (LV999), contact by PM on http://forum.micasaverde.com/ 
 
 Special thanks to amg0 for his support and advise
@@ -9,6 +9,12 @@ Acknowledgements to akbooer for developing the openLuup environement !
 
 Introduction :
 This plug-in is intended to run under the "openLuup" emulation of a Vera system. It should work on a "real" Vera, but has not been tested in that environment. It is intended to capture and monitor select weather data provided by Weather Underground www.weatherunderground.com under their general terms and conditions available on their website. It requires an API developer key that must be obtained from their website.
+
+Changelog:
+Version 1.0 2016-07-15 - first production version, installation via the AltUI/openLuup App Store
+Version 1.1 2016-08-24 - rewrite for cleaner and faster code, but no new functionality
+Version 1.2 2016-09-22 - added language parameter to fetch the WU data in another language than English (@korttoma suggestion)
+			 added today and tomorrow forecast data (high/low temps, conditions and text forecast
 
 Requires:
 1.	A system running openLuup (or a Vera home automation controller, not tested) and the AltUI interface. For background, please see the http://forum.micasaverde.com/ forum.
@@ -18,7 +24,7 @@ Requires:
 
 Installation:
 1.	Install from the AltUI App Store the “openWeather” app
-2.	Select the “Variables” tab of the newly created “openWeather” device and edit the “ProviderKey” and “Location” variables to your needs (see requirements above).
+2.	Select the “Variables” tab of the newly created “openWeather” device and edit the “ProviderKey” and “Location” variables to your needs (see requirements above). Also please edit the "Metric" variable to the value of 1 (metric units, default) or O (if you want to use US/Imperial units) and the "Language" variable to the two letters shortcut used by Weather Underground API (e.g. EN is English, FR is French, etc... as per https://www.wunderground.com/weather/api/d/docs?d=language-support)
 3.	Reload the Luup engine…
 
 Use:
