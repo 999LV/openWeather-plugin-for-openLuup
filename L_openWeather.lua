@@ -1,5 +1,5 @@
 _NAME = "openWeather"
-_VERSION = "1.3"
+_VERSION = "1.4"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
@@ -10,6 +10,8 @@ Version 1.1 2016-08-24 - major rewrite for cleaner and faster code, but no new f
 Version 1.2 2016-09-22 - added language parameter to fetch the WU data in another language than English (@korttoma suggestion)
 						 added today and tomorrow forecast data (high/low temps, conditions and text forecast
 Version 1.3 2016-11-13 - added WU display and observation locations (@jswim788 suggestion)
+Version 1.4 2016-11-14 - added 'AllowEstimated' parameter variable, to ignore estimated data
+             produced by WU when a weather station becomes somehow unavailable
 
 		Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
@@ -48,8 +50,10 @@ local WU = {
 	Period = 1800,	-- data refresh interval in seconds
 	Metric = 1,	-- 1 = metric units, 0 = US/Imperial
 	Language = "EN", -- default language
+  AllowEstimated = "1", -- If 0 then WU estimated data is ignored, if 1 then WU estimates are allowed when selected weather station is not available
 	ProviderName = "WUI (Weather Underground)", -- added for reference to data source
-	ProviderURL = "http://www.wunderground.com"
+	ProviderURL = "http://www.wunderground.com",
+  Documentation = "https://raw.githubusercontent.com/999LV/openWeather-plugin-for-openLuup/master/documentation/openWeather%20documentation.pdf"
 	}
 
 local VariablesMap = {
@@ -135,7 +139,17 @@ function WU_GetData(category) -- call the WU API with our key and location param
 		nicelog({"WU call failed with http code =  ", tostring(retcode)})
 	else
 		wdata, err = json.decode(wdata)
-		if not (err == 225) then extractloop(wdata) else nicelog({"WU json decode error = ", tostring(err)}) end
+		if not (err == 225) then
+      local estimate = 0
+      if category == "conditions" and WU.AllowEstimated == "0" then
+        estimate = tonumber(wdata["current_observation"]["estimated"]["estimated"] or "0")
+      end
+      if estimate == 0 then
+        extractloop(wdata)
+      else
+        nicelog({"WU conditions data is estimated... data ignored as per 'AllowEstimated' flag variable !"})
+      end
+    else nicelog({"WU json decode error = ", tostring(err)}) end
 	end
 	return err
 end
