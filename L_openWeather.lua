@@ -1,5 +1,5 @@
 _NAME = "openWeather"
-_VERSION = "1.2"
+_VERSION = "1.3"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
@@ -9,6 +9,7 @@ Version 1.0 2016-07-15 - first production version, installation via the AltUI/op
 Version 1.1 2016-08-24 - major rewrite for cleaner and faster code, but no new functionality
 Version 1.2 2016-09-22 - added language parameter to fetch the WU data in another language than English (@korttoma suggestion)
 						 added today and tomorrow forecast data (high/low temps, conditions and text forecast
+Version 1.3 2016-11-13 - added WU display and observation locations (@jswim788 suggestion)
 
 		Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
@@ -60,6 +61,8 @@ local VariablesMap = {
 	current_observation_wind_string = {serviceId = SID_Weather, variable = "WindCondition"},
 	current_observation_icon_url = {serviceId = SID_Weather, variable = "IconUrl"},
 	current_observation_icon = {serviceId = SID_Weather, variable = "ConditionGroup"},
+  current_observation_display_location_full = {serviceId = SID_Weather, variable = "LocationDisplay"},
+  current_observation_observation_location_full = {serviceId = SID_Weather, variable = "LocationObservation"},
 	forecast_simpleforecast_forecastday_1_high_celsius = {serviceId = SID_Weather, variable = "TodayHighTemp"}, -- lua table indexes start at 1, not 0
 	forecast_simpleforecast_forecastday_1_high_fahrenheit = {serviceId = SID_Weather, variable = "TodayHighTemp"},
 	forecast_simpleforecast_forecastday_1_low_celsius = {serviceId = SID_Weather, variable = "TodayLowTemp"},
