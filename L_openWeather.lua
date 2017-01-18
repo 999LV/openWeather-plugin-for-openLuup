@@ -67,6 +67,7 @@ local VariablesMap = {
 	current_observation_icon = {serviceId = SID_Weather, variable = "ConditionGroup"},
   current_observation_display_location_full = {serviceId = SID_Weather, variable = "LocationDisplay"},
   current_observation_observation_location_full = {serviceId = SID_Weather, variable = "LocationObservation"},
+	forecast_simpleforecast_forecastday_1_icon = {serviceId = SID_Weather, variable = "Forecastday1ConditionGroup"},
 	forecast_simpleforecast_forecastday_1_high_celsius = {serviceId = SID_Weather, variable = "TodayHighTemp"}, -- lua table indexes start at 1, not 0
 	forecast_simpleforecast_forecastday_1_high_fahrenheit = {serviceId = SID_Weather, variable = "TodayHighTemp"},
 	forecast_simpleforecast_forecastday_1_low_celsius = {serviceId = SID_Weather, variable = "TodayLowTemp"},
