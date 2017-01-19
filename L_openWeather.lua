@@ -1,5 +1,5 @@
 _NAME = "openWeather"
-_VERSION = "1.4"
+_VERSION = "1.5"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
@@ -12,6 +12,8 @@ Version 1.2 2016-09-22 - added language parameter to fetch the WU data in anothe
 Version 1.3 2016-11-13 - added WU display and observation locations (@jswim788 suggestion)
 Version 1.4 2016-11-14 - added 'AllowEstimated' parameter variable, to ignore estimated data
              produced by WU when a weather station becomes somehow unavailable
+Version 1.5 2017-01-19 - amg0 update for dual weather icon display (today and tomorrow conditions). AltUI will be updated
+			by amg0 to display the weather device accordingly
 
 		Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
