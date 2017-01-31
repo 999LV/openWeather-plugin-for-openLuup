@@ -1,5 +1,5 @@
 _NAME = "openWeather"
-_VERSION = "1.5"
+_VERSION = "1.6"
 _DESCRIPTION = "WU plugin for openLuup!!"
 _AUTHOR = "logread (aka LV999)"
 
@@ -14,8 +14,9 @@ Version 1.4 2016-11-14 - added 'AllowEstimated' parameter variable, to ignore es
              produced by WU when a weather station becomes somehow unavailable
 Version 1.5 2017-01-19 - amg0 update for dual weather icon display (today and tomorrow conditions). AltUI will be updated
 			by amg0 to display the weather device accordingly
+Version 1.6 2017-01-30 - amg0 update for 'WindSpeed' variable
 
-		Special thanks to amg0 and akbooer for their support and advise
+			Special thanks to amg0 and akbooer for their support and advise
 		Acknowledgements to akbooer for developing the openLuup environement
 
 This plug-in is intended to run under the "openLuup" emulation of a Vera system
@@ -69,6 +70,8 @@ local VariablesMap = {
 	current_observation_icon = {serviceId = SID_Weather, variable = "ConditionGroup"},
   current_observation_display_location_full = {serviceId = SID_Weather, variable = "LocationDisplay"},
   current_observation_observation_location_full = {serviceId = SID_Weather, variable = "LocationObservation"},
+  current_observation_wind_mph = {serviceId = SID_Weather, variable = "WindSpeed"},
+  current_observation_wind_kph = {serviceId = SID_Weather, variable = "WindSpeed"},
 	forecast_simpleforecast_forecastday_1_icon = {serviceId = SID_Weather, variable = "Forecastday1ConditionGroup"},
 	forecast_simpleforecast_forecastday_1_high_celsius = {serviceId = SID_Weather, variable = "TodayHighTemp"}, -- lua table indexes start at 1, not 0
 	forecast_simpleforecast_forecastday_1_high_fahrenheit = {serviceId = SID_Weather, variable = "TodayHighTemp"},
@@ -140,7 +143,7 @@ function WU_GetData(category) -- call the WU API with our key and location param
 	if err then -- something wrong happpened (website down, wrong key or location)
 		wdata = nil -- to do: proper error handling
 		nicelog({"WU call failed with http code =  ", tostring(retcode)})
-	else
+	else	
 		wdata, err = json.decode(wdata)
 		if not (err == 225) then
       local estimate = 0
@@ -195,12 +198,14 @@ function init(lul_device)
 	nicelog("device startup")
 	if luup.attr_get("TemperatureFormat") == "F" then -- localize for Farenheit or Celsius based on openLuup setup
 		VariablesMap.current_observation_temp_c = nil
+		VariablesMap.current_observation_wind_kph = nil
 		VariablesMap.forecast_simpleforecast_forecastday_1_high_celsius = nil
 		VariablesMap.forecast_simpleforecast_forecastday_1_low_celsius = nil
 		VariablesMap.forecast_simpleforecast_forecastday_2_high_celsius = nil
 		VariablesMap.forecast_simpleforecast_forecastday_2_low_celsius = nil
 	else
 		VariablesMap.current_observation_temp_f = nil
+		VariablesMap.current_observation_wind_mph = nil
 		VariablesMap.forecast_simpleforecast_forecastday_1_high_fahrenheit = nil
 		VariablesMap.forecast_simpleforecast_forecastday_1_low_fahrenheit = nil
 		VariablesMap.forecast_simpleforecast_forecastday_2_high_fahrenheit = nil
